@@ -1,6 +1,17 @@
 package com.database;
 
+import java.util.List;
+
 public interface DatabaseRecordClass {
-	public String getTableName();
-	public String getTablePrivateKey();
+  String getTableName();
+  
+  String[] getTablePrivateKey();
+  
+  void setWhereClauseKey(CharSequence paramCharSequence);
+  
+  StringBuffer getWhereClauseKey();
+  
+  void setWhereClauseValues(List<Object> paramList);
+  
+  List<Object> getWhereClauseValues();
 }

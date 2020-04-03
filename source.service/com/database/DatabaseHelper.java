@@ -1,6 +1,7 @@
 package com.database;
 
-import java.math.BigDecimal;
+import com.configuration.Config;
+import com.global.Global;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -8,116 +9,168 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.LinkedHashMap;
+import java.util.List;
 import javax.servlet.http.HttpServlet;
-import org.apache.log4j.Logger;
-
-import com.configuration.Config;
-import com.configuration.ConfigurationMenu;
 
 public class DatabaseHelper extends HttpServlet {
-
 	private static final long serialVersionUID = 1L;
-	private static final Logger logger = Logger.getLogger(DatabaseHelper.class.getSimpleName());
 
-	public static Connection getConnection() throws SQLException {
+	private static final Integer sqlMaxLogResultSize = Integer.valueOf(100);
+
+	private static final Integer sqlMaxUpdateSize = Integer.valueOf(1000);
+
+	public static Connection getConnection() throws DatabaseHelperException {
 		Connection conn = null;
-		String databaseClassName 		= Config.getConfigValue(ConfigurationMenu.DatabaseClassName);
-		String databaseConnectionUrl 	= Config.getConfigValue(ConfigurationMenu.DatabaseConnectionUrl);
-		String databaseUserName 		= Config.getConfigValue(ConfigurationMenu.DatabaseUserName);
-		String databasePassword 		= Config.getConfigValue(ConfigurationMenu.DatabasePassword);
+		String databaseClassName = Config.getConfigValue("DatabaseClassName");
+		String databaseConnectionUrl = Config.getConfigValue("DatabaseConnectionUrl");
+		String databaseUserName = Config.getConfigValue("DatabaseUserName");
+		String databasePassword = Config.getConfigValue("DatabasePassword");
 		try {
 			Class.forName(databaseClassName);
-		} catch (ClassNotFoundException e) {
-			throw new SQLException(e);
+			conn = DriverManager.getConnection(databaseConnectionUrl, databaseUserName, databasePassword);
+			conn.setAutoCommit(false);
+		} catch (ClassNotFoundException | SQLException e) {
+			throw new DatabaseHelperException(e.getMessage(), e);
 		}
-		conn = DriverManager.getConnection(databaseConnectionUrl, databaseUserName, databasePassword);
 		return conn;
 	}
-	
-	public static DatabaseHelperResult query(Connection dbConn, String sqlStatement) throws SQLException {
+
+	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement) throws DatabaseHelperException {
 		return query(dbConn, sqlStatement, null);
 	}
 
-	public static DatabaseHelperResult query(Connection dbConn, String sqlStatement, Object[] whereCluase) throws SQLException {
-		DatabaseHelperResult dbHelperResult = new DatabaseHelperResult();
+	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, List<Object> whereCluase) throws DatabaseHelperException {
+		return query(dbConn, sqlStatement, whereCluase.toArray(), null);
+	}
+
+	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, Object[] whereCluase, String orderby) throws DatabaseHelperException {
+		synchronized (DatabaseHelper.class) {
+			ArrayList<ArrayList<Object>> resultSetList = new ArrayList<>();
+			PreparedStatement stmt = null;
+			ResultSet queryResult = null;
+			StringBuffer sqlBuffer = new StringBuffer(sqlStatement);
+			try {
+				Date queryStartTime = new Date();
+				if (orderby != null && !orderby.isEmpty()) {
+					sqlBuffer.append(" where " + orderby);
+				}
+				stmt = dbConn.prepareStatement(sqlBuffer.toString());
+				databaseSetValue(stmt, whereCluase);
+				queryResult = stmt.executeQuery();
+				ResultSetMetaData rsmd = queryResult.getMetaData();
+				while (queryResult.next()) {
+					ArrayList<Object> row = new ArrayList<Object>();
+					for (int index = 1; index <= rsmd.getColumnCount(); index++)
+						row.add(queryResult.getObject(index));
+					resultSetList.add(row);
+				}
+				sqlStatementLog(stmt, resultSetList.size(), (new Date()).getTime() - queryStartTime.getTime());
+			} catch (SQLException e) {
+				Global.getLogger.debug(DatabaseHelper.class.getName(), sqlBuffer + ", " + Arrays.toString(whereCluase));
+				throw new DatabaseHelperException(e.getMessage(), e);
+			} finally {
+				try {
+					if (stmt != null)
+						stmt.close();
+					if (queryResult != null)
+						queryResult.close();
+				} catch (SQLException e) {
+					throw new DatabaseHelperException(e.getMessage(), e);
+				}
+			}
+			return resultSetList;
+		}
+	}
+
+	public static void databaseSetValue(PreparedStatement stmt, Object[] whereCluase) throws SQLException {
+		if (whereCluase != null && whereCluase.length > 0) {
+			for (int index = 1; index <= whereCluase.length; index++) {
+				Object value = whereCluase[index - 1];
+				stmt.setObject(index, value);
+			}
+			stmt.addBatch();
+		}
+	}
+
+	public static int update(Connection dbConn, String sqlStatement, Object[] whereCluaseArr) throws DatabaseHelperException {
 		PreparedStatement stmt = null;
-		ResultSet queryResult = null;
+		Date queryStartTime = new Date();
 		try {
-			Date queryStartTime = new Date();
 			stmt = dbConn.prepareStatement(sqlStatement);
-			// SQL where clause
-			if(whereCluase != null) {
-				for(int paraIndex = 0; paraIndex < whereCluase.length; paraIndex++ ) {
-					if (whereCluase[paraIndex] instanceof Date) {
-						stmt.setTimestamp(paraIndex, 		new Timestamp(((Date) whereCluase[paraIndex]).getTime()));
-				    } else if (whereCluase[paraIndex] instanceof Integer) {
-				    	stmt.setInt(paraIndex + 1, 			(Integer) whereCluase[paraIndex]);
-				    } else if (whereCluase[paraIndex] instanceof Long) {
-				    	stmt.setLong(paraIndex + 1, 		(Long) whereCluase[paraIndex]);
-				    } else if (whereCluase[paraIndex] instanceof Double) {
-				    	stmt.setDouble(paraIndex + 1, 		(Double) whereCluase[paraIndex]);
-				    } else if (whereCluase[paraIndex] instanceof BigDecimal) {
-				    	stmt.setBigDecimal(paraIndex + 1, 	(BigDecimal) whereCluase[paraIndex]);
-				    } else if (whereCluase[paraIndex] instanceof Float) {
-				    	stmt.setFloat(paraIndex + 1, 		(Float) whereCluase[paraIndex]);
-				    } else if (whereCluase[paraIndex] instanceof String){
-				    	stmt.setString(paraIndex + 1, 		(String) whereCluase[paraIndex]);
-				    } else if (whereCluase[paraIndex] instanceof Boolean){
-				    	stmt.setBoolean(paraIndex + 1, 		(Boolean) whereCluase[paraIndex]);
-				    }
-				}
+			if (whereCluaseArr != null) {
+				databaseSetValue(stmt, whereCluaseArr);
 			}
-			queryResult = stmt.executeQuery();
-			
-			// create column name in ArrayList result
-			ResultSetMetaData rsmd = queryResult.getMetaData();
-			for (int index = 1; index <= rsmd.getColumnCount(); index++) {
-				dbHelperResult.columnNameMap.put(rsmd.getColumnName(index).toUpperCase(), index - 1);
+			int row = stmt.executeUpdate();
+			sqlStatementLog(stmt, row, (new Date()).getTime() - queryStartTime.getTime());
+			return row;
+		} catch (Exception e) {
+			throw new DatabaseHelperException(e.getMessage(), e);
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (SQLException e) {
+				throw new DatabaseHelperException(e.getMessage(), e);
 			}
-
-			// create query SQL result in ArrayList result
-			while (queryResult.next()) {
-				ArrayList<Object> row = new ArrayList<Object>();
-				for (int index = 1; index <= dbHelperResult.columnNameMap.size(); index++) {
-					row.add(queryResult.getObject(index));
-				}
-				dbHelperResult.resultSetList.add(row);
-			}
-			logger.debug(stmt.toString().substring(stmt.toString().lastIndexOf(":") + 1) + "[" + dbHelperResult.resultSetList.size() +" rows, " + (new Date().getTime() - queryStartTime.getTime()) + "ms]");
-		}finally {
-			if( stmt != null ) { stmt.close(); }
-			if( queryResult != null ) { queryResult.close(); }
 		}
-		return dbHelperResult;
 	}
-	
-	public int update(Connection dbConn, String[] sqlStatement, Object[] whereCluase) throws SQLException {
-		Statement stmt = null;
+
+	public static int update(Connection dbConn, String[] sqlStatementArr, Object[][] whereCluaseArr) throws DatabaseHelperException {
+		PreparedStatement stmt = null;
+		int ttlUpdateRows = 0;
+		Date queryStartTime = new Date();
 		try {
-			stmt = dbConn.createStatement();
-			for (String query : sqlStatement) {
-				stmt.addBatch(query);
+			for (int index = 0; index <= sqlStatementArr.length; index++) {
+				queryStartTime = new Date();
+				String sql = sqlStatementArr[index];
+				stmt = dbConn.prepareStatement(sql);
+				if (whereCluaseArr != null) {
+					databaseSetValue(stmt, whereCluaseArr[index]);
+				}
+				stmt.addBatch();
+				if (index % sqlMaxUpdateSize.intValue() == 0) {
+					ttlUpdateRows += Arrays.stream(stmt.executeBatch()).sum();
+					stmt.clearBatch();
+				}
 			}
-			int[] updateRows = stmt.executeBatch();
-			return Arrays.stream(updateRows).sum();
-		}finally {
-			if( stmt != null ) { stmt.close(); }
+			ttlUpdateRows += Arrays.stream(stmt.executeBatch()).sum();
+			sqlStatementLog(stmt, ttlUpdateRows, (new Date()).getTime() - queryStartTime.getTime());
+			return ttlUpdateRows;
+		} catch (SQLException e) {
+			throw new DatabaseHelperException(e.getMessage(), e);
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+			} catch (SQLException e) {
+				throw new DatabaseHelperException(e.getMessage(), e);
+			}
 		}
 	}
 
-	public static class DatabaseHelperResult {
-		
-		public LinkedHashMap<String, Integer> columnNameMap = new LinkedHashMap<String, Integer>();
-		public ArrayList<ArrayList<Object>> resultSetList = new ArrayList<ArrayList<Object>>();
-		
-		public Object getObject( int index, String columnLabel ) {
-			int columnIndex = columnNameMap.get(columnLabel.toUpperCase());
-			return resultSetList.get(index).get(columnIndex);
+	public static Object getValue(ArrayList<ArrayList<Object>> dbResultList, int row, int column) {
+		if (row > dbResultList.size()) {
+			throw new IndexOutOfBoundsException("dbResultList max row of " + dbResultList.size() + ", cannot get " + row + " index row");
 		}
+		Object dbValue = dbResultList.get(row).get(column);
+		if (dbValue == null) {
+			return null;
+		}
+		return dbValue;
+	}
+
+	public static void sqlStatementLog(Statement jdbcSQLStatment, int updateRows, long processTime) {
+		String sqlStatement = jdbcSQLStatment.toString();
+		int sqlLength = sqlStatement.length();
+		int sqlResultLimit = Math.min(sqlMaxLogResultSize.intValue(), sqlLength);
+		StringBuffer sqlLog = new StringBuffer(sqlStatement.substring(sqlStatement.indexOf(":") + 1, sqlResultLimit));
+		if (sqlLength > sqlResultLimit) {
+			sqlLog.append("...");
+		}
+		sqlLog.append(" [" + updateRows + " rows, " + processTime + "ms]");
+		Global.getLogger.debug(DatabaseHelper.class.getName(), sqlLog.toString());
 	}
 }

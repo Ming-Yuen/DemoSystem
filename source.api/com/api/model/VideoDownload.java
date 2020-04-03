@@ -1,6 +1,6 @@
 package com.api.model;
 
-public class VideoDownloadRequest {
+public class VideoDownload {
 	private String downloadURL;
 	private String videoType;
 	private String saveURI;

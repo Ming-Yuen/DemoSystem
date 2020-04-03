@@ -1,23 +1,18 @@
-package com.api.util;
+package com.media.utils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import com.api.model.VideoDownloadRequest;
 import com.api.std.DocUtil;
-import com.api.std.Response;
 import com.common.util.FileUtil;
 import com.configuration.Config;
 import com.configuration.ConfigurationMenu;
 import com.net.util.HttpConnection;
 
 public class MediaUtil extends DocUtil {
-	public static void videoDownloadProcess(Connection dbConn, VideoDownloadRequest request, Response res) throws IOException, InterruptedException {
+	public static void videoDownloadProcess(String downloadUrl, String savePath) throws IOException, InterruptedException {
 		final String exeLocation = System.getProperty("catalina.base") + File.separator + "logs" + File.separator + "youtube-dl.exe";
-		String download_path = request.getSaveURI();
-		String url = request.getDownloadURL();
 		String[] command = { "cmd", };
 		Process p;
 		youtubeUpdate(exeLocation);
@@ -25,8 +20,8 @@ public class MediaUtil extends DocUtil {
 		new Thread(new SyncPipe(p.getErrorStream(), System.err)).start();
 		new Thread(new SyncPipe(p.getInputStream(), System.out)).start();
 		PrintWriter stdin = new PrintWriter(p.getOutputStream());
-		stdin.println("cd \"" + download_path + "\"");
-		stdin.println(new File(exeLocation).getParent() + "\\youtube-dl " + url + " --write-all-thumbnails");
+		stdin.println("cd \"" + savePath + "\"");
+		stdin.println(new File(exeLocation).getParent() + "\\youtube-dl " + downloadUrl + " --write-all-thumbnails");
 		stdin.close();
 		p.waitFor();
 	}
@@ -35,7 +30,10 @@ public class MediaUtil extends DocUtil {
 		final String youtubeDlUrl = "https://yt-dl.org/";
 		final String downloadUrl = "https://yt-dl.org/downloads/latest/youtube-dl.exe";
 
-		String response = HttpConnection.connect(youtubeDlUrl, null);
+		HttpConnection.HTTPConnMandatoryField mandatory = new HttpConnection.HTTPConnMandatoryField();
+	    mandatory.setConnUrl(youtubeDlUrl).setConnMethod(HttpConnection.HTTPConnMandatoryField.HTTPMethod.GET).setConnContentType("application/json");
+	    HttpConnection conn = new HttpConnection(mandatory, null);
+	    String response = conn.connect().exportAsString();
 		int strIndex = response.indexOf("<div><a href=\"latest\">Latest</a>");
 		int endIndex = response.indexOf("</div>", strIndex);
 		String version = response.substring(strIndex, endIndex + 1);

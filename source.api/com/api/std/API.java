@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 
 import com.database.DatabaseHelper;
 
-public class Entry {
+public class API {
 
 	protected Logger logger = Logger.getLogger(this.getClass().getSimpleName());
 	protected Connection dbConn = null;
@@ -29,7 +29,7 @@ public class Entry {
 			}
 			logger.info("end of process");
 		}catch(SQLException e) {
-			logger.error("1", e);
+			logger.error(this.getClass().getName(), e);
 		}
 	}
 }
