@@ -6,32 +6,36 @@ public class Global {
   public static class getLogger {
     public static final Logger log4j = Logger.getLogger("");
     
-    public static void all(String processName, String message) {
-      log4j.debug(processName + "\t" + message);
+    public static void all(String procName, String message) {
+      log4j.debug("Class:" + procName + "\t" + message);
     }
     
-    public static void trace(String processName, String message) {
-      log4j.trace(processName + "\t" + message);
+    public static void trace(String procName, String message) {
+      log4j.trace("Class:" + procName + "\t" + message);
     }
     
-    public static void debug(String processName, String message) {
-      log4j.debug(processName + "\t" + message);
+    public static void debug(String procName, String message) {
+      log4j.debug("Class:" + procName + "\t" + message);
     }
     
-    public static void info(String processName, String message) {
-      log4j.info(processName + "\t" + message);
+    public static void info(String procName, String message) {
+      log4j.info("Class:" + procName + "\t" + message);
     }
     
-    public static void warn(String processName, String message) {
-      log4j.warn(processName + "\t" + message);
+    public static void info(String procName, String methodsName, String message) {
+        log4j.info("Method:" + procName + "." + methodsName + "\t" + message);
+      }
+    
+    public static void warn(String procName, String message) {
+      log4j.warn("Class:" + procName + "\t" + message);
     }
     
-    public static void error(String processName, String message) {
-      log4j.error(processName + "\t" + message);
+    public static void error(String procName, String message) {
+      log4j.error("Class:" + procName + "\t" + message);
     }
     
-    public static void error(String processName, String message, Throwable t) {
-      log4j.error(processName + "\t" + message, t);
+    public static void error(String procName, String message, Throwable t) {
+      log4j.error("Class:" + procName + "\t" + message, t);
     }
   }
 }

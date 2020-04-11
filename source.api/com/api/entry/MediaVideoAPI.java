@@ -15,7 +15,6 @@ import io.swagger.annotations.Api;
 
 @Path(ApiPath.media)
 @Api(ApiPath.media)
-//@SwaggerDefinition(tags = {@Tag(name="user",description="user")})
 public class MediaVideoAPI extends API {
 
 	@POST
@@ -23,16 +22,17 @@ public class MediaVideoAPI extends API {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response videoDownload(VideoDownload request) {
-		Response res = new Response();
+		Response resp = new Response();
 		try {
+			init("videoDownload");
 			String savePath = request.getSaveURI();
 			String downloadUrl = request.getDownloadURL();
 			MediaUtil.videoDownloadProcess(downloadUrl, savePath);
 		} catch (Throwable e) {
 			error(e);
 		} finally {
-			finish();
+			finish(resp);
 		}
-		return res;
+		return resp;
 	}
 }
