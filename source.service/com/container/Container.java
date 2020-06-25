@@ -28,13 +28,14 @@ public class Container extends HttpServlet {
 				dbConn = DatabaseHelper.getConnection();
 				ServerConfigation.IPprocess();
 				test(dbConn);
+				isProcessSuccess = true;
 			} catch (Exception e) {
 				Global.getLogger.error(getClass().getName(), e.getMessage(), e);
 			} finally {
 				try {
-					if (isProcessSuccess) {
+					if (isProcessSuccess && dbConn!= null) {
 						dbConn.commit();
-					}else {
+					}else if(dbConn!= null){
 						dbConn.rollback();
 					}
 				}catch(SQLException e) {
