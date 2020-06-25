@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+
+import javax.ws.rs.HttpMethod;
+
 import com.api.std.DocUtil;
 import com.common.util.FileUtil;
 import com.configuration.Config;
@@ -31,7 +34,7 @@ public class MediaUtil extends DocUtil {
 		final String downloadUrl = "https://yt-dl.org/downloads/latest/youtube-dl.exe";
 
 		HttpConnection.HTTPConnMandatoryField mandatory = new HttpConnection.HTTPConnMandatoryField();
-	    mandatory.setConnUrl(youtubeDlUrl).setConnMethod(HttpConnection.HTTPConnMandatoryField.HTTPMethod.GET).setConnContentType("application/json");
+	    mandatory.setApiUrl(youtubeDlUrl).setMethod(HttpMethod.GET).setConnContentType("application/json");
 	    HttpConnection conn = new HttpConnection(mandatory, null);
 	    String response = conn.connect().exportAsString();
 		int strIndex = response.indexOf("<div><a href=\"latest\">Latest</a>");

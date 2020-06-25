@@ -39,11 +39,15 @@ public class DatabaseHelper extends HttpServlet {
 	}
 
 	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement) throws DatabaseHelperException {
-		return query(dbConn, sqlStatement, null);
+		return query(dbConn, sqlStatement, null, null);
 	}
 
 	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, List<Object> whereCluase) throws DatabaseHelperException {
 		return query(dbConn, sqlStatement, whereCluase.toArray(), null);
+	}
+	
+	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, Object[] whereCluase) throws DatabaseHelperException{
+		return query(dbConn, sqlStatement, whereCluase, null);
 	}
 
 	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, Object[] whereCluase, String orderby) throws DatabaseHelperException {
@@ -69,7 +73,7 @@ public class DatabaseHelper extends HttpServlet {
 				}
 				sqlStatementLog(stmt, resultSetList.size(), (new Date()).getTime() - queryStartTime.getTime());
 			} catch (SQLException e) {
-				Global.getLogger.debug(DatabaseHelper.class.getName(), sqlBuffer + ", " + Arrays.toString(whereCluase));
+				Global.getLogger.debug(DatabaseHelper.class.getName(), sqlBuffer + (whereCluase == null ?	 "" : ", " + Arrays.toString(whereCluase)));
 				throw new DatabaseHelperException(e.getMessage(), e);
 			} finally {
 				try {

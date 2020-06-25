@@ -4,6 +4,7 @@
         <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/source.api"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/source.service"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/source.service.test"/>
         <property name="java-output-path" value="/DemoSystemWeb/build/classes"/>
         <property name="context-root" value="DemoSystem"/>
     </wb-module>

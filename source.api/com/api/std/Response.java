@@ -1,16 +1,16 @@
 package com.api.std;
 
 public class Response {
-	private Integer status;
+	private String status;
 	private Integer successCount;
 	private Integer failedCount;
 	private String errMessage;
 
-	public Integer getStatus() {
+	public String getStatus() {
 		return status;
 	}
 
-	public void setStatus(Integer status) {
+	public void setStatus(String status) {
 		this.status = status;
 	}
 

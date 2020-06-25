@@ -2,6 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="source.api"/>
 	<classpathentry kind="src" path="source.service"/>
+	<classpathentry kind="src" path="source.service.test"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>

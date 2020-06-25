@@ -13,9 +13,10 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 public class DatabaseRecordRebuild {
 	public static final Integer limitSize = Integer.valueOf(100);
+	
+	private static final String separ = File.separator;
 
-	public static final String DatabaseDoc = String.valueOf(System.getProperty("catalina.base")) + File.separator
-			+ "wtpwebapps" + File.separator + "DemoSystemBackEnd" + File.separator + "DatabaseDoc";
+	public static final String databaseDoc = String.join(separ, System.getProperty("catalina.base"), "wtpwebapps", "DemoSystemBackEnd", "DatabaseDoc");
 
 	public static void rebuildDatabase(Connection dbConn) {
 		FileInputStream fis = null;
@@ -23,17 +24,18 @@ public class DatabaseRecordRebuild {
 		ArrayList<String> sqlList = new ArrayList<>();
 		StringBuffer sqlStatement = new StringBuffer();
 		try {
-			WildcardFileFilter wildcardFileFilter = new WildcardFileFilter("*.sql");
-			File f = new File(DatabaseDoc);
-			File[] fileArr = f.listFiles((FileFilter) wildcardFileFilter);
+			FileFilter wildcardFileFilter = new WildcardFileFilter("*.sql");
+			File f = new File(databaseDoc);
+			File[] fileArr = f.listFiles(wildcardFileFilter);
 			for (int indexFile = 0; indexFile < fileArr.length; indexFile++) {
 				fis = new FileInputStream(fileArr[indexFile]);
 				reader = new BufferedReader(new InputStreamReader(fis));
 				String line = null;
 				boolean endQuotationMark = true;
 				while ((line = reader.readLine()) != null) {
-					if (line.trim().isEmpty())
+					if (line.trim().isEmpty()) {
 						continue;
+					}
 					char[] charArr = line.toCharArray();
 					char lasterChar = Character.MIN_VALUE;
 					byte b;
@@ -61,7 +63,7 @@ public class DatabaseRecordRebuild {
 					}
 				}
 			}
-			DatabaseHelper.update(dbConn, sqlList.<String>toArray(new String[sqlList.size()]), (Object[][]) null);
+			DatabaseHelper.update(dbConn, sqlList.toArray(new String[sqlList.size()]), null);
 		} catch (Exception e) {
 			Global.getLogger.error(DatabaseRecordRebuild.class.getName(), e.getMessage(), e);
 		}

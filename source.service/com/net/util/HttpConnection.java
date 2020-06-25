@@ -21,30 +21,16 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 public class HttpConnection {
-	private final String connUrl;
-
-	private final HTTPConnMandatoryField.HTTPMethod connMethod;
-
-	private final String mediaType;
-
-	private final List<Object> connParameter;
-
-	private final Charset connCharset;
-
-	private final Integer connTimeOut;
+	private final HTTPConnMandatoryField mandatoryField;
+	public final HTTPConnSelectiveField selectiveField;
 
 	private final HTTPConnResponseField connResponseField;
 
 	private final StringBuilder content = new StringBuilder();
 
 	public HttpConnection(HTTPConnMandatoryField mandatoryField, HTTPConnSelectiveField selectiveField) {
-		this.connUrl = mandatoryField.connUrl;
-		this.connMethod = mandatoryField.connMethod;
-		this.mediaType = mandatoryField.mediaType;
-		selectiveField = (selectiveField == null) ? new HTTPConnSelectiveField() : selectiveField;
-		this.connParameter = selectiveField.connParameter;
-		this.connCharset = selectiveField.connCharset;
-		this.connTimeOut = selectiveField.connTimeOut;
+		this.mandatoryField = mandatoryField;
+		this.selectiveField = (selectiveField == null) ? new HTTPConnSelectiveField() : selectiveField;
 		this.connResponseField = new HTTPConnResponseField();
 	}
 
@@ -53,19 +39,19 @@ public class HttpConnection {
 		BufferedWriter writer = null;
 		OutputStream os = null;
 		try {
-			URL url = new URL(this.connUrl);
+			URL url = new URL(mandatoryField.apiUrl);
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
-			con.setRequestMethod(this.connMethod.getHTTPMethod());
-			con.setRequestProperty("Content-Type", this.mediaType);
-			con.setRequestProperty("charset", this.connCharset.displayName());
-			con.setConnectTimeout(this.connTimeOut.intValue());
+			con.setRequestMethod(mandatoryField.method);
+			con.setRequestProperty("Content-Type", mandatoryField.mediaType);
+			con.setRequestProperty("charset", selectiveField.connCharset.displayName());
+			con.setConnectTimeout(selectiveField.timeOut.intValue());
 			con.setDoInput(true);
 			con.setDoOutput(true);
 			con.connect();
-			if (!this.connParameter.isEmpty()) {
+			if (!selectiveField.parameter.isEmpty()) {
 				os = con.getOutputStream();
 				writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-				for (Object obj : this.connParameter) {
+				for (Object obj : selectiveField.parameter) {
 					writer.write(obj.toString());
 					writer.flush();
 				}
@@ -88,8 +74,8 @@ public class HttpConnection {
 		}
 	}
 
-	public <T> String xmlClassConvStr(T xmlClass) throws JAXBException {
-		JAXBContext context = JAXBContext.newInstance(new Class[] { xmlClass.getClass() });
+	public <T> String xmlClassConvStr(Class<T> xmlClass) throws JAXBException {
+		JAXBContext context = JAXBContext.newInstance(xmlClass);
 		Marshaller m = context.createMarshaller();
 		m.setProperty("jaxb.formatted.output", Boolean.TRUE);
 		StringWriter sw = new StringWriter();
@@ -102,10 +88,12 @@ public class HttpConnection {
 		return gson.toJson(jsonClass);
 	}
 
-	public <T> T exportAsXmlClass(T clazz) throws JAXBException {
-		if (clazz == null)
+	@SuppressWarnings("unchecked")
+	public <T> T exportAsXmlClass(Class<T> clazz) throws JAXBException {
+		if (clazz == null) {
 			throw new NullPointerException("Export XML class cannot null");
-		JAXBContext context = JAXBContext.newInstance(new Class[] { clazz.getClass() });
+		}
+		JAXBContext context = JAXBContext.newInstance(clazz);
 		Unmarshaller jaxbUnmarshaller = context.createUnmarshaller();
 		Object xmlObj = jaxbUnmarshaller.unmarshal(new StringReader(exportAsString()));
 		return (T) xmlObj;
@@ -125,33 +113,19 @@ public class HttpConnection {
 	}
 
 	public static class HTTPConnMandatoryField {
-		private String connUrl;
+		private String apiUrl;
 
-		private HTTPMethod connMethod;
+		private String method;
 
 		private String mediaType;
 
-		public enum HTTPMethod {
-			GET("GET"), POST("POST"), PUT("PUT"), DELETE("DELETE"), PATCH("PATCH"), HEAD("HEAD"), OPTIONS("OPTIONS");
-
-			private String method;
-
-			HTTPMethod(String method) {
-				this.method = method;
-			}
-
-			public String getHTTPMethod() {
-				return this.method;
-			}
-		}
-
-		public HTTPConnMandatoryField setConnUrl(String connUrl) {
-			this.connUrl = connUrl;
+		public HTTPConnMandatoryField setApiUrl(String apiUrl) {
+			this.apiUrl = apiUrl;
 			return this;
 		}
 
-		public HTTPConnMandatoryField setConnMethod(HTTPMethod connMethod) {
-			this.connMethod = connMethod;
+		public HTTPConnMandatoryField setMethod(String HTTPMethod) {
+			this.method = HTTPMethod;
 			return this;
 		}
 
@@ -161,37 +135,37 @@ public class HttpConnection {
 		}
 	}
 
-	public enum HTTPMethod {
-		GET("GET"), POST("POST"), PUT("PUT"), DELETE("DELETE"), PATCH("PATCH"), HEAD("HEAD"), OPTIONS("OPTIONS");
-
-		private String method;
-
-		HTTPMethod(String method) {
-			this.method = method;
-		}
-
-		public String getHTTPMethod() {
-			return this.method;
-		}
-	}
+//	public enum HTTPMethod {
+//		GET("GET"), POST("POST");//, PUT("PUT"), DELETE("DELETE"), PATCH("PATCH"), HEAD("HEAD"), OPTIONS("OPTIONS");
+//
+//		private String method;
+//
+//		HTTPMethod(String method) {
+//			this.method = method;
+//		}
+//
+//		public String getHTTPMethod() {
+//			return this.method;
+//		}
+//	}
 
 	public static class HTTPConnSelectiveField {
-		public List<Object> connParameter = new ArrayList<Object>();
+		public List<Object> parameter = new ArrayList<Object>();
 
 		private Charset connCharset = StandardCharsets.UTF_8;
 
-		private Integer connTimeOut = Integer.valueOf(30000);
+		private Integer timeOut = 30000;
 
-		public void setConnParameter(List<Object> connParameter) {
-			this.connParameter = connParameter;
+		public void setParameter(List<Object> connParameter) {
+			this.parameter = connParameter;
 		}
 
-		public void setConnCharset(Charset connCharset) {
+		public void setCharset(Charset connCharset) {
 			this.connCharset = connCharset;
 		}
 
-		public void setConnTimeOut(Integer connTimeOut) {
-			this.connTimeOut = connTimeOut;
+		public void setTimeOut(Integer timeOut) {
+			this.timeOut = timeOut;
 		}
 	}
 

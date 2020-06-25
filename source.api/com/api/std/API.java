@@ -11,8 +11,8 @@ public class API {
 
 	protected Connection dbConn = null;
 
-	protected static final Integer isSuccess = 1;
-	protected static final Integer isFail = -1;
+	protected static final String isSuccess = "Success";
+	protected static final String isFail = "Fail";
 	
 	protected String procName;
 	
@@ -36,7 +36,7 @@ public class API {
 	}
 
 	public void finish(Response resp) {
-		if(errRec != null && errRec.getErrCode() == isFail) {
+		if(errRec != null && isFail.equals(errRec.getErrCode())) {
 			resp.setErrMessage(errRec.getErrMessage());
 			resp.setStatus(errRec.getErrCode());
 		}else {
@@ -56,14 +56,14 @@ public class API {
 }
 
 class ErrRecord {
-	private Integer errCode = null;
+	private String errCode = null;
 	private String errMessage = null;
 
-	public Integer getErrCode() {
+	public String getErrCode() {
 		return errCode;
 	}
 
-	public void setErrCode(Integer errCode) {
+	public void setErrCode(String errCode) {
 		this.errCode = errCode;
 	}
 
