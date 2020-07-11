@@ -1,6 +1,9 @@
 package com.net.util;
 
+import com.global.Global;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -13,168 +16,147 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 public class HttpConnection {
-	private final HTTPConnMandatoryField mandatoryField;
-	public final HTTPConnSelectiveField selectiveField;
+	private final Mandatory mandatory;
+	private final Selective selective;
 
-	private final HTTPConnResponseField connResponseField;
+	private final Response response;
 
-	private final StringBuilder content = new StringBuilder();
+	private StringBuilder content = new StringBuilder();
 
-	public HttpConnection(HTTPConnMandatoryField mandatoryField, HTTPConnSelectiveField selectiveField) {
-		this.mandatoryField = mandatoryField;
-		this.selectiveField = (selectiveField == null) ? new HTTPConnSelectiveField() : selectiveField;
-		this.connResponseField = new HTTPConnResponseField();
+	public HttpConnection(Mandatory mandatoryField, Selective selectiveField) {
+		this.mandatory = mandatoryField;
+		this.selective = (selectiveField == null) ? new Selective() : selectiveField;
+		this.response = new Response();
+		selective.procName = this.getClass().getSimpleName();
 	}
 
 	public HttpConnection connect() throws IOException {
-		BufferedReader br = null;
-		BufferedWriter writer = null;
-		OutputStream os = null;
-		try {
-			URL url = new URL(mandatoryField.apiUrl);
-			HttpURLConnection con = (HttpURLConnection) url.openConnection();
-			con.setRequestMethod(mandatoryField.method);
-			con.setRequestProperty("Content-Type", mandatoryField.mediaType);
-			con.setRequestProperty("charset", selectiveField.connCharset.displayName());
-			con.setConnectTimeout(selectiveField.timeOut.intValue());
-			con.setDoInput(true);
-			con.setDoOutput(true);
-			con.connect();
-			if (!selectiveField.parameter.isEmpty()) {
-				os = con.getOutputStream();
-				writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-				for (Object obj : selectiveField.parameter) {
-					writer.write(obj.toString());
+		content = new StringBuilder();
+		URL url = new URL(mandatory.apiUrl);
+		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+		conn.setRequestMethod(mandatory.method);
+		conn.setRequestProperty("Content-Type", mandatory.mediaType);
+		conn.setRequestProperty("charset", selective.charset.displayName());
+		conn.setConnectTimeout(selective.timeOut);
+		conn.setDoInput(true);
+		conn.setDoOutput(true);
+		conn.connect();
+		if (!selective.body.isEmpty()) {
+			try(OutputStream os = conn.getOutputStream()){
+				try(BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"))){
+					writer.write(selective.body);
 					writer.flush();
 				}
-				writer.close();
-				os.close();
+				Global.getLogger.info(selective.procName, "Body : " + os.toString());
 			}
-			br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			String input;
-			while ((input = br.readLine()) != null)
-				this.content.append(input);
-			this.connResponseField.setResponseCode(Integer.valueOf(con.getResponseCode()));
-			return this;
-		} finally {
-			if (br != null)
-				br.close();
-			if (writer != null)
-				writer.close();
-			if (os != null)
-				os.close();
 		}
+		try(BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream() != null ? conn.getErrorStream() : conn.getInputStream()))){
+			String input;
+			while ((input = br.readLine()) != null) {
+				this.content.append(input);
+			}
+			Global.getLogger.info(selective.procName, "Response : " + content);
+		}
+		this.response.setResponseCode(conn.getResponseCode());
+		return this;
 	}
 
-	public <T> String xmlClassConvStr(Class<T> xmlClass) throws JAXBException {
-		JAXBContext context = JAXBContext.newInstance(xmlClass);
-		Marshaller m = context.createMarshaller();
-		m.setProperty("jaxb.formatted.output", Boolean.TRUE);
-		StringWriter sw = new StringWriter();
-		m.marshal(xmlClass, sw);
-		return sw.toString();
+	public Response getResponse() {
+		return this.response;
 	}
 
-	public <T> String jsonClassConvStr(T jsonClass) {
+	public <T> T toJsonRecord(Class<T> clazz) {
 		Gson gson = new Gson();
-		return gson.toJson(jsonClass);
+		return (T) gson.fromJson(getContent(), clazz);
 	}
-
+	
 	@SuppressWarnings("unchecked")
-	public <T> T exportAsXmlClass(Class<T> clazz) throws JAXBException {
+	public <T> T toXMLRecord(Class<T> clazz) throws JAXBException {
 		if (clazz == null) {
 			throw new NullPointerException("Export XML class cannot null");
 		}
 		JAXBContext context = JAXBContext.newInstance(clazz);
 		Unmarshaller jaxbUnmarshaller = context.createUnmarshaller();
-		Object xmlObj = jaxbUnmarshaller.unmarshal(new StringReader(exportAsString()));
+		Object xmlObj = jaxbUnmarshaller.unmarshal(new StringReader(getContent()));
 		return (T) xmlObj;
 	}
 
-	public HTTPConnResponseField getConnResponseField() {
-		return this.connResponseField;
+	public String getContent() {
+		return new String(content);
 	}
 
-	public <T> T exportAsJsonClass(Class<T> clazz) {
-		Gson gson = new Gson();
-		return (T) gson.fromJson(exportAsString(), clazz);
-	}
-
-	public String exportAsString() {
-		return this.content.toString();
-	}
-
-	public static class HTTPConnMandatoryField {
+	public static class Mandatory {
 		private String apiUrl;
-
 		private String method;
-
 		private String mediaType;
 
-		public HTTPConnMandatoryField setApiUrl(String apiUrl) {
+		public Mandatory setApiUrl(String apiUrl) {
 			this.apiUrl = apiUrl;
 			return this;
 		}
 
-		public HTTPConnMandatoryField setMethod(String HTTPMethod) {
+		public Mandatory setMethod(String HTTPMethod) {
 			this.method = HTTPMethod;
 			return this;
 		}
 
-		public HTTPConnMandatoryField setConnContentType(String MediaType) {
+		public Mandatory setContentType(String MediaType) {
 			this.mediaType = MediaType;
 			return this;
 		}
 	}
 
-//	public enum HTTPMethod {
-//		GET("GET"), POST("POST");//, PUT("PUT"), DELETE("DELETE"), PATCH("PATCH"), HEAD("HEAD"), OPTIONS("OPTIONS");
-//
-//		private String method;
-//
-//		HTTPMethod(String method) {
-//			this.method = method;
-//		}
-//
-//		public String getHTTPMethod() {
-//			return this.method;
-//		}
-//	}
-
-	public static class HTTPConnSelectiveField {
-		public List<Object> parameter = new ArrayList<Object>();
-
-		private Charset connCharset = StandardCharsets.UTF_8;
-
+	public static class Selective {
+		private String body = "";
+		private Charset charset = StandardCharsets.UTF_8;
 		private Integer timeOut = 30000;
+		private String procName = "";
 
-		public void setParameter(List<Object> connParameter) {
-			this.parameter = connParameter;
+		public void setTextBody(String body) {
+			this.body = body;
 		}
 
-		public void setCharset(Charset connCharset) {
-			this.connCharset = connCharset;
+		public Selective putJsonBody(JsonElement record) {
+			Gson gson = new Gson();
+			this.body = gson.toJson(record);
+			return this;
+		}
+
+		public Selective putXMLBody(Object record) throws Exception {
+			if(record == null) {
+				throw new Exception("record cannot null");
+			}
+			JAXBContext context = JAXBContext.newInstance(record.getClass());
+			Marshaller m = context.createMarshaller();
+			m.setProperty("jaxb.formatted.output", Boolean.TRUE);
+			StringWriter sw = new StringWriter();
+			m.marshal(record, sw);
+			this.body = sw.toString();
+			return this;
+		}
+
+		public void setCharset(Charset charset) {
+			this.charset = charset;
 		}
 
 		public void setTimeOut(Integer timeOut) {
 			this.timeOut = timeOut;
 		}
+		
+		public void setProName(String procName) {
+			this.procName = procName;
+		}
+		
 	}
 
-	public class HTTPConnResponseField {
+	public class Response {
 		private Integer responseCode;
-
-		public HTTPConnResponseField() {
-			this.responseCode = Integer.valueOf(0);
-		}
 
 		public Integer getResponseCode() {
 			return this.responseCode;

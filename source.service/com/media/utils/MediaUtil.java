@@ -33,10 +33,10 @@ public class MediaUtil extends DocUtil {
 		final String youtubeDlUrl = "https://yt-dl.org/";
 		final String downloadUrl = "https://yt-dl.org/downloads/latest/youtube-dl.exe";
 
-		HttpConnection.HTTPConnMandatoryField mandatory = new HttpConnection.HTTPConnMandatoryField();
-	    mandatory.setApiUrl(youtubeDlUrl).setMethod(HttpMethod.GET).setConnContentType("application/json");
+		HttpConnection.Mandatory mandatory = new HttpConnection.Mandatory();
+	    mandatory.setApiUrl(youtubeDlUrl).setMethod(HttpMethod.GET).setContentType("application/json");
 	    HttpConnection conn = new HttpConnection(mandatory, null);
-	    String response = conn.connect().exportAsString();
+	    String response = conn.connect().getContent();
 		int strIndex = response.indexOf("<div><a href=\"latest\">Latest</a>");
 		int endIndex = response.indexOf("</div>", strIndex);
 		String version = response.substring(strIndex, endIndex + 1);

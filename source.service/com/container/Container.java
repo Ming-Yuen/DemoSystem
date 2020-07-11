@@ -8,13 +8,17 @@ import com.database.hibernate.model.ProductsModel;
 import com.database.test.Products;
 import com.global.Global;
 import com.google.gson.Gson;
+import com.net.util.HttpConnection;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 import javax.servlet.http.HttpServlet;
+import javax.ws.rs.HttpMethod;
+import javax.ws.rs.core.MediaType;
 
 public class Container extends HttpServlet {
 	private static final long serialVersionUID = 1963256997966895234L;
@@ -27,7 +31,7 @@ public class Container extends HttpServlet {
 			try {
 				dbConn = DatabaseHelper.getConnection();
 				ServerConfigation.IPprocess();
-				test(dbConn);
+				baidu();
 				isProcessSuccess = true;
 			} catch (Exception e) {
 				Global.getLogger.error(getClass().getName(), e.getMessage(), e);
@@ -44,6 +48,17 @@ public class Container extends HttpServlet {
 				Global.getLogger.debug(getClass().getName(), "service end");
 			}
 		}
+	}
+	
+	public void baidu() throws IOException {
+		String url = "https://tieba.baidu.com/p/6656185856";
+		String uri2 = "https://tieba.baidu.com/f/commit/post/add";
+		HttpConnection.Mandatory mandatory = new HttpConnection.Mandatory();
+		mandatory.setApiUrl(url);
+		mandatory.setContentType(MediaType.APPLICATION_JSON);
+		mandatory.setMethod(HttpMethod.POST);
+		HttpConnection http = new HttpConnection(mandatory, null);
+		System.out.println(http.connect().getContent());
 	}
 	
 	public void test(Connection dbConn) throws Exception {
