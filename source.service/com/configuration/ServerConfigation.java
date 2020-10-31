@@ -2,35 +2,33 @@ package com.configuration;
 
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
-import javax.management.AttributeNotFoundException;
-import javax.management.MBeanException;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.Query;
 import javax.management.QueryExp;
+import javax.servlet.http.HttpServlet;
 
-public class ServerConfigation {
+import com.global.Global;
 
-	public static boolean IPv4Process = false;
-	public static boolean IPv6Process = false;
+public class ServerConfigation extends HttpServlet {
 
-	public static String IPv4Scheme;
-	public static String IPv6Scheme;
+	private static final long serialVersionUID = 5706590732627679043L;
+	private static boolean IPv4Process = false;
+	private static boolean IPv6Process = false;
 
-	public static String IPv4Host;
-	public static String IPv6Host;
+	private static String IPv4Scheme;
+	private static String IPv6Scheme;
 
-	public static String IPv4Port;
-	public static String IPv6Port;
+	private static String IPv4Host;
+	private static String IPv6Host;
 
-	public static void IPprocess() throws Exception {
+	private static String IPv4Port;
+	private static String IPv6Port;
+
+	public static void IPprocess(){
 		try {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 			QueryExp subQuery1 = Query.match(Query.attr("protocol"), Query.value("HTTP/1.1"));
@@ -59,8 +57,41 @@ public class ServerConfigation {
 					}
 				}
 			}
-		} catch (Exception e) {
-			throw e;
+		}catch(Exception e) {
+			Global.getLogger.error(ServerConfigation.class.getName(), "", e);
 		}
 	}
+
+	public static boolean isIPv4Process() {
+		return IPv4Process;
+	}
+
+	public static boolean isIPv6Process() {
+		return IPv6Process;
+	}
+
+	public static String getIPv4Scheme() {
+		return IPv4Scheme;
+	}
+
+	public static String getIPv6Scheme() {
+		return IPv6Scheme;
+	}
+
+	public static String getIPv4Host() {
+		return IPv4Host;
+	}
+
+	public static String getIPv6Host() {
+		return IPv6Host;
+	}
+
+	public static String getIPv4Port() {
+		return IPv4Port;
+	}
+
+	public static String getIPv6Port() {
+		return IPv6Port;
+	}
+
 }

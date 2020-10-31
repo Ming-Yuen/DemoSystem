@@ -39,18 +39,14 @@ public class DatabaseHelper extends HttpServlet {
 	}
 
 	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement) throws DatabaseHelperException {
-		return query(dbConn, sqlStatement, null, null);
+		return query(dbConn, sqlStatement, new Object[] {});
 	}
 
 	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, List<Object> whereCluase) throws DatabaseHelperException {
-		return query(dbConn, sqlStatement, whereCluase.toArray(), null);
-	}
-	
-	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, Object[] whereCluase) throws DatabaseHelperException{
-		return query(dbConn, sqlStatement, whereCluase, null);
+		return query(dbConn, sqlStatement, whereCluase.toArray());
 	}
 
-	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, Object[] whereCluase, String orderby) throws DatabaseHelperException {
+	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, Object[] whereCluase) throws DatabaseHelperException {
 		synchronized (DatabaseHelper.class) {
 			ArrayList<ArrayList<Object>> resultSetList = new ArrayList<>();
 			PreparedStatement stmt = null;
@@ -58,9 +54,6 @@ public class DatabaseHelper extends HttpServlet {
 			StringBuffer sqlBuffer = new StringBuffer(sqlStatement);
 			try {
 				Date queryStartTime = new Date();
-				if (orderby != null && !orderby.isEmpty()) {
-					sqlBuffer.append(" where " + orderby);
-				}
 				stmt = dbConn.prepareStatement(sqlBuffer.toString());
 				databaseSetValue(stmt, whereCluase);
 				queryResult = stmt.executeQuery();

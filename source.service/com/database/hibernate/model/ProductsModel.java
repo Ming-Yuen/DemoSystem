@@ -1,25 +1,26 @@
 package com.database.hibernate.model;
 
 import java.math.BigDecimal;
-
+//C:\Users\Admin\eclipse-workspace\DemoSystemBackEnd\source.service\com\database\hibernate\model\ProductsModel.java
+//C:\Users\Admin\eclipse-workspace\DemoSystemBackEnd\src\ProductsModel.xml
 public class ProductsModel {
-	public String productCode;
+	private String productCode;
 
-	public String productName;
+	private String productName;
 
-	public String productLine;
+	private String productLine;
 
-	public String productScale;
+	private String productScale;
 
-	public String productVendor;
+	private String productVendor;
 
-	public String productDescription;
+	private String productDescription;
 
-	public Integer quantityInStock;
+	private Integer quantityInStock;
 
-	public BigDecimal buyPrice;
+	private BigDecimal buyPrice;
 
-	public BigDecimal MSRP;
+	private BigDecimal MSRP;
 
 	public String getProductCode() {
 		return productCode;

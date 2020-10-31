@@ -1,7 +1,5 @@
 package com.configuration;
 
-import java.io.File;
-
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -15,7 +13,7 @@ public class SwaggerConfigation extends HttpServlet {
 		super.init(config);
 		BeanConfig beanConfig = new BeanConfig();
 		beanConfig.setBasePath("/" + Config.getConfigValue(ConfigurationMenu.projectName)+ "/rest");
-		beanConfig.setHost("localhost:"+ServerConfigation.IPv4Port);
+		beanConfig.setHost("localhost:"+ServerConfigation.getIPv4Port());
 		beanConfig.setResourcePackage("com.api");
 		beanConfig.setPrettyPrint(true);
 		beanConfig.setScan(true);

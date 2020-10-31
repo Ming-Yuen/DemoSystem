@@ -1,22 +1,16 @@
 package com.database.hibernate;
 
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
 
-import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
-import com.database.hibernate.model.ProductsModel;
-
 public class HibernateHelper {
 	private static SessionFactory factory;
 
-	public HibernateHelper() {
+	static {
 		factory = new Configuration().configure().buildSessionFactory();
 	}
 
@@ -30,21 +24,21 @@ public class HibernateHelper {
 		return id;
 	}
 
-	public <T> List<T> getObject(Class<T> clazz) {
+	public static List<?> query(String queryString) {
 		Session session = factory.openSession();
 		Transaction tx = null;
+		boolean isProcess = false;
 		try {
 			tx = session.beginTransaction();
-			List<T> employees = session.createQuery("FROM products where productCode = 'test'").list();
+			List<?> resultSet = session.createQuery(queryString).list();
 			tx.commit();
-			return employees;
-		} catch (HibernateException e) {
-			if (tx != null)
-				tx.rollback();
-			e.printStackTrace();
+			isProcess = true;
+			return resultSet;
 		} finally {
+			if(!isProcess && tx != null) {
+				tx.rollback();
+			}
 			session.close();
 		}
-		return null;
 	}
 }
