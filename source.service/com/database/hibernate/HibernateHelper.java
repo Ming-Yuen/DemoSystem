@@ -14,14 +14,14 @@ public class HibernateHelper {
 		factory = new Configuration().configure().buildSessionFactory();
 	}
 
-	public Integer addObject(Object record) {
-		Integer id = 0;
+	public static String addObject(Object record) {
+		String value = null;
 		try (Session session = factory.openSession()) {
 			Transaction tx = session.beginTransaction();
-			id = (Integer) session.save(record);
+			value = String.valueOf(session.save(record));
 			tx.commit();
 		}
-		return id;
+		return value;
 	}
 
 	public static List<?> query(String queryString) {

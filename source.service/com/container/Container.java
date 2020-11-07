@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServlet;
 import javax.ws.rs.HttpMethod;
@@ -31,7 +32,7 @@ public class Container extends HttpServlet {
 
 	public void init() {
 		synchronized (this) {
-			Global.getLogger.debug(getClass().getName(), "service start");
+			Global.getLogger.info(getClass().getName(), "service start");
 			ServerConfigation.IPprocess();//build API swagger
 			Connection dbConn = null;
 			boolean isProcessSuccess = false;;
@@ -52,7 +53,7 @@ public class Container extends HttpServlet {
 				}catch(SQLException e) {
 					Global.getLogger.error(this.getClass().getName(), e.getMessage(), e);
 				}
-				Global.getLogger.debug(getClass().getName(), "service end");
+				Global.getLogger.info(getClass().getName(), "service end");
 			}
 		}
 	}
@@ -73,27 +74,28 @@ public class Container extends HttpServlet {
 	}
 	
 	public void test(Connection dbConn) throws Exception {
-//		ProductsModel model = new ProductsModel();
-////		model.productCode = "test";
-//
-//		model.productName = "test name";
-//
-//		model.productLine = "line";
-//
-//		model.productScale = "scale";
-//
-//		model.productVendor = "vendor";
-//
-//		model.productDescription = "desc";
-//
-//		model.quantityInStock = 10;
-//
-//		model.buyPrice = new BigDecimal(10);
-//
-//		model.MSRP = new BigDecimal(10);
-//		helper.addObject(model);
-//		HibernateHelper.query("select productName, productLine FROM ProductsModel where productName = '1969 Harley Davidson Ultimate Chopper'");
-		
+		ProductsModel model = new ProductsModel();
+		model.setId(UUID.randomUUID().toString());
+		model.setProductCode("Test");
+		model.setProductName("test name");
+
+		model.setProductLine("line");
+
+		model.setProductScale("scale");
+
+		model.setProductVendor("vendor");
+
+		model.setProductDescription("desc");
+
+		model.setQuantityInStock(10);
+
+		model.setBuyPrice(new BigDecimal(10));
+
+		model.setMSRP(new BigDecimal(10));
+		model.setModifytime(new java.sql.Date(new Date().getTime()));
+		HibernateHelper.addObject(model);
+//		List<?> result = HibernateHelper.query("select productName, productLine FROM ProductsModel where productName = '1969 Harley Davidson Ultimate Chopper'");
+//		System.out.println(new Gson().toJson(result));
 		
 	}
 

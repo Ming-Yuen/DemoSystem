@@ -10,9 +10,10 @@
 			This class contains the employee detail.
 		</meta>
 
-		<id name="productCode" type="string" column="productCode">
-		</id>
-
+		<id name="id" type="string" column="id">
+			<generator class="native"/>
+		</id> 
+		<property name="productCode" column="productCode" type="string" />
 		<property name="productName" column="productName" type="string" />
 		<property name="productLine" column="productLine" type="string" />
 		<property name="productScale" column="productScale" type="string" />
@@ -21,6 +22,6 @@
 		<property name="quantityInStock" column="quantityInStock" type="integer" />
 		<property name="buyPrice" column="buyPrice" type="big_decimal" />
 		<property name="MSRP" column="MSRP" type="big_decimal" />
-
+		<property name="modifytime" column="modifytime" type="timestamp" />
 	</class>
 </hibernate-mapping>

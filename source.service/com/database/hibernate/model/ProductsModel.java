@@ -1,9 +1,17 @@
 package com.database.hibernate.model;
 
 import java.math.BigDecimal;
+import java.sql.Date;
+
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 //C:\Users\Admin\eclipse-workspace\DemoSystemBackEnd\source.service\com\database\hibernate\model\ProductsModel.java
 //C:\Users\Admin\eclipse-workspace\DemoSystemBackEnd\src\ProductsModel.xml
 public class ProductsModel {
+	private String id;
+	
 	private String productCode;
 
 	private String productName;
@@ -21,6 +29,19 @@ public class ProductsModel {
 	private BigDecimal buyPrice;
 
 	private BigDecimal MSRP;
+	
+	private Date modifytime;
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
 
 	public String getProductCode() {
 		return productCode;
@@ -92,6 +113,14 @@ public class ProductsModel {
 
 	public void setMSRP(BigDecimal mSRP) {
 		MSRP = mSRP;
+	}
+
+	public Date getModifytime() {
+		return modifytime;
+	}
+
+	public void setModifytime(Date modifytime) {
+		this.modifytime = modifytime;
 	}
 
 }
