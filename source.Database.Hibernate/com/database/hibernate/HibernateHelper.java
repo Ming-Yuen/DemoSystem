@@ -14,7 +14,7 @@ public class HibernateHelper {
 	private static SessionFactory factory;
 
 	static {
-		File f = new File("C:\\Users\\Admin\\eclipse-workspace\\DemoSystemBackEnd\\source.Database.Hibernate\\com\\hibernate\\configuration\\hibernate.cfg.xml");
+		File f = new File("C:\\Users\\Admin\\eclipse-workspace\\DemoSystemBackEnd\\source.Database.Hibernate\\com\\database\\hibernate\\hibernate.cfg.xml");
 		factory = new Configuration().configure(f).buildSessionFactory();
 	}
 	
