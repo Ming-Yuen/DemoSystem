@@ -1,6 +1,7 @@
 package com.common.util;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -36,6 +37,26 @@ public class FileUtil {
 		} finally {
 			if(inStream != null) {inStream.close();}
 			if(outStream != null) {outStream.close();}
+		}
+	}
+	
+	public static void createParentFileIfAbsent(File file) throws IOException {
+		if(!file.exists()) {
+			File directory = file.getParentFile();
+			if(!directory.exists()) {
+				if(!directory.mkdirs()) {
+					throw new IOException("System cannot create output file directory in " + directory.getCanonicalPath());
+				}
+			}
+		}
+	}
+	
+	public static void createFileIfAbsent(File file) throws IOException {
+		if(!file.exists()) {
+			createParentFileIfAbsent(file);
+			if(!file.createNewFile()){
+				throw new IOException("System cannot create output file in " + file.getCanonicalPath());
+			}
 		}
 	}
 }

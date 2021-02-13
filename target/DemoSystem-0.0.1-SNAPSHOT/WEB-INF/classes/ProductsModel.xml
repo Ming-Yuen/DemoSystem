@@ -4,25 +4,24 @@
 "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-	<class name="ProductsModel" table="Products">
+	<class name="com.database.hibernate.model.ProductsModel" table="Products">
 
 		<meta attribute="class-description">
 			This class contains the employee detail.
 		</meta>
 
-		<id name="productCode" type="String" column="productCode">
-			<generator class="native" />
-		</id>
-
+		<id name="id" type="string" column="id">
+			<generator class="native"/>
+		</id> 
 		<property name="productCode" column="productCode" type="string" />
 		<property name="productName" column="productName" type="string" />
 		<property name="productLine" column="productLine" type="string" />
 		<property name="productScale" column="productScale" type="string" />
 		<property name="productVendor" column="productVendor" type="string" />
 		<property name="productDescription" column="productDescription" type="string" />
-		<property name="quantityInStock" column="quantityInStock" type="Integer" />
+		<property name="quantityInStock" column="quantityInStock" type="integer" />
 		<property name="buyPrice" column="buyPrice" type="big_decimal" />
 		<property name="MSRP" column="MSRP" type="big_decimal" />
-
+		<property name="modifytime" column="modifytime" type="timestamp" />
 	</class>
 </hibernate-mapping>

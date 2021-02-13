@@ -2,7 +2,7 @@ package com.scheduler;
 
 import java.util.Date;
 
-import com.common.util.DateFormatUtil;
+import com.common.util.DateUtils;
 import com.global.Global;
 
 public class ThreadScheduler implements Runnable {
@@ -26,7 +26,7 @@ public class ThreadScheduler implements Runnable {
 					Thread.sleep(1000);
 					continue;
 				}
-				lastRuntime = DateFormatUtil.cutTime(current, 3).getTime();
+				lastRuntime = DateUtils.cutTime(current, 3).getTime();
 				Thread sc = new Thread(new Scheduler1());
 				sc.start();
 			}
@@ -40,7 +40,7 @@ class Scheduler1 implements Runnable {
 
 	@Override
 	public void run() {
-		Global.getLogger.info(this.getClass().getName(), DateFormatUtil.convDateToString(new Date(), "HH:mm:ss.SSS"));
+		Global.getLogger.info(this.getClass().getName(), DateUtils.convDateToString(new Date(), "HH:mm:ss.SSS"));
 	}
 
 }

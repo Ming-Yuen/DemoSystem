@@ -2,16 +2,16 @@ package com.api.model;
 
 import java.util.Date;
 
-import com.file.annotation.ExcelFieldName;
+import com.file.annotation.FileFieldName;
 
 public class FileExcelRecord {
 
-	@ExcelFieldName("Item code")
+	@FileFieldName("Item code")
 	public String itemCode;
 	
-	@ExcelFieldName("Amount")
+	@FileFieldName("Amount")
 	public Integer amount;
 	
-	@ExcelFieldName("Modify date")
+	@FileFieldName("Modify date")
 	public Date modifyDate;
 }

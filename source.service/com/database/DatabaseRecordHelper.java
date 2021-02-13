@@ -14,11 +14,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.database.annotation.DatabaseColumn;
 import com.database.annotation.DatabasePrimaryKey;
 import com.database.annotation.DatabaseTable;
 
 public class DatabaseRecordHelper {
+	
+	public enum Execute{
+		insert, update, updateThenInsert 
+	}
 	
 	private static void checkRecordAnnotation(Class<?> clazz) throws Exception {
 		DatabaseTable type = clazz.getAnnotation(DatabaseTable.class);
@@ -81,18 +87,39 @@ public class DatabaseRecordHelper {
 		for (int sqlRow = 0; sqlRow < sqlResult.size(); sqlRow++) {
 			T sqlRecord = clazz.newInstance();
 			for (int sqlColumn = 0; sqlColumn < sqlFieldList.size(); sqlColumn++) {
-				sqlRecord.getClass().getField(sqlFieldList.get(sqlColumn)).set(sqlRecord, sqlResult.get(sqlRow).get(sqlColumn));
+				Field column = sqlRecord.getClass().getField(sqlFieldList.get(sqlColumn));
+				if(column.getType() == String.class && sqlResult.get(sqlRow).get(sqlColumn) != null) {
+					column.set(sqlRecord, String.valueOf(sqlResult.get(sqlRow).get(sqlColumn)));
+				}else {
+					column.set(sqlRecord, sqlResult.get(sqlRow).get(sqlColumn));
+				}
 			}
 			sqlRecordList.add(sqlRecord);
 		}
 		return sqlRecordList;
 	}
+	
+	public static <T> Integer insert(Connection dbConn, T record) throws Exception {
+		return execute(dbConn, Arrays.asList(record), Execute.insert);
+	}
 
+	public static <T> Integer insert(Connection dbConn, List<T> record) throws Exception {
+		return execute(dbConn, record, Execute.insert);
+	}
+	
 	public static <T> Integer update(Connection dbConn, T record) throws Exception {
-		return update(dbConn, Arrays.asList(record));
+		return execute(dbConn, Arrays.asList(record), Execute.update);
 	}
 
 	public static <T> Integer update(Connection dbConn, List<T> record) throws Exception {
+		return execute(dbConn, record, Execute.update);
+	}
+
+	public static <T> Integer execute(Connection dbConn, T record, Execute execute) throws Exception {
+		return execute(dbConn, Arrays.asList(record), execute);
+	}
+
+	public static <T> Integer execute(Connection dbConn, List<T> record, Execute execute) throws Exception {
 		PreparedStatement stmt = null;
 		Date queryStartTime = new Date();
 		try {
@@ -102,10 +129,13 @@ public class DatabaseRecordHelper {
 				ArrayList<String> sqlFieldList 	   = SqlRecord.getColumnFields(dbRecord.getClass());
 				ArrayList<String> sqlPrimaryFields = SqlRecord.getPrimaryFields(dbRecord.getClass());
 				
-				StringBuffer sqlFields = SqlRecord.getSqlUpdateStatment(dbRecord.getClass(), sqlFieldList, sqlPrimaryFields);
+				StringBuffer sqlFields = SqlRecord.getSqlUpdateStatment(dbRecord.getClass(), sqlFieldList, sqlPrimaryFields, execute);
 				stmt = dbConn.prepareStatement(sqlFields.toString().toUpperCase());
-				List<Object> columnValues = SqlRecord.getSqlFieldValues(dbRecord, sqlFieldList, sqlPrimaryFields);
+				List<Object> columnValues = SqlRecord.getSqlFieldValues(dbRecord, sqlFieldList, sqlPrimaryFields, execute);
 				DatabaseHelper.databaseSetValue(stmt, columnValues.toArray());
+			}
+			if(stmt == null) {
+				throw new Exception("PreparedStatement is null");
 			}
 			int[] updateRows = stmt.executeBatch();
 			int ttlUpdateRows = Arrays.stream(updateRows).sum();
@@ -161,7 +191,7 @@ public class DatabaseRecordHelper {
 		
 		public static ArrayList<String> getColumnFields(Class<?> clazz) {
 			ArrayList<String> columnName = new ArrayList<String>();
-			for(Field field : clazz.getFields()) {
+			for(Field field : clazz.getDeclaredFields()) {
 				DatabaseColumn column_name = field.getAnnotation(DatabaseColumn.class);
 				if(column_name != null) {
 					columnName.add(column_name.columnName());
@@ -182,25 +212,50 @@ public class DatabaseRecordHelper {
 			return sql;
 		}
 		
-		public static StringBuffer getSqlUpdateStatment(Class<?> clazz, ArrayList<String> sqlFields, ArrayList<String> sqlPrimaryFields) {
+		public static StringBuffer getSqlUpdateStatment(Class<?> clazz, ArrayList<String> sqlFields, ArrayList<String> sqlPrimaryFields, Execute execute) {
 			String sqlPkField = String.join(" = ? and ", getPrimaryFields(clazz)) + " = ? ";
-			
-			StringBuffer sqlStatement = new StringBuffer()
-										.append("UPDATE ").append(SqlRecord.getTableNameFields(clazz))
-										.append(" WHERE ").append(sqlPkField);
+
+			StringBuffer sqlStatement = new StringBuffer();
+			switch(execute) {
+				case update:
+					sqlStatement.append("update ").append(SqlRecord.getTableNameFields(clazz))
+								.append(" set ").append(String.join(" = ?, ", getColumnFields(clazz))).append(" = ?")
+								.append(" where ").append(sqlPkField);
+					break;
+				case insert:
+					ArrayList<String> fieldList = getColumnFields(clazz);
+					sqlStatement.append("insert into ").append(SqlRecord.getTableNameFields(clazz))
+								.append(" (").append(String.join(", ", fieldList)).append(")")
+								.append(" values (").append(StringUtils.repeat("?", ",", fieldList.size())).append(")");
+					break;
+				default:
+					break;
+			}
 			return sqlStatement;
 		}
 		
-		public static ArrayList<Object> getSqlFieldValues(Object record, ArrayList<String> sqlFields, ArrayList<String> sqlPrimaryFields) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
+		public static ArrayList<Object> getSqlFieldValues(Object record, ArrayList<String> sqlFields, ArrayList<String> sqlPrimaryFields, Execute execute) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
 			ArrayList<Object> values = new ArrayList<Object>();
 			
+			HashMap<String, Object> annotationCache = new HashMap<String, Object>();
+			
+			Field[] varField = record.getClass().getFields();
+			for(Field var : varField) {
+				DatabaseColumn type = var.getAnnotation(DatabaseColumn.class);
+				if(type != null) {
+					annotationCache.put(type.columnName(), var.get(record));
+				}
+			}
+			
 			for(String sqlField : sqlFields) {
-				Object value = record.getClass().getField(sqlField).get(record);
+				Object value = annotationCache.get(sqlField);
 				values.add(value);
 			}
-			for(String sqlField : sqlPrimaryFields) {
-				Object value = record.getClass().getField(sqlField).get(record);
-				values.add(value);
+			if(Execute.update == execute) {
+				for(String sqlField : sqlPrimaryFields) {
+					Object value = annotationCache.get(sqlField);
+					values.add(value);
+				}
 			}
 			return values;
 		}

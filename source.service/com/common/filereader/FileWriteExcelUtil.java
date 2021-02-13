@@ -11,7 +11,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
-import com.file.annotation.ExcelFieldName;
+import com.file.annotation.FileFieldName;
 
 public class FileWriteExcelUtil {
 
@@ -39,7 +39,7 @@ public class FileWriteExcelUtil {
 		Row hdrRow = sheet.createRow(0);
 		for(int index = 0; index < fields.length; index++) {
 			Field field = fields[index];
-			ExcelFieldName cellFieldName =  field.getAnnotation(ExcelFieldName.class);
+			FileFieldName cellFieldName =  field.getAnnotation(FileFieldName.class);
 			if(cellFieldName == null) {
 				hdrRow.createCell(index).setCellValue("");
 			}else {

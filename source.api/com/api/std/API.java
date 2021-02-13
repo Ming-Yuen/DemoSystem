@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.database.DatabaseHelper;
-import com.database.DatabaseHelperException;
+import com.database.DbException;
 import com.global.Global;
 
 public class API {
@@ -18,8 +18,9 @@ public class API {
 	
 	protected ErrRecord errRec = null;
 	
-	public void init(String procName) {
+	public void init(String procName) throws DbException {
 		this.procName = procName;
+		getConnection();
 	}
 
 	public void error(Throwable t) {
@@ -29,8 +30,8 @@ public class API {
 		Global.getLogger.error(procName, t.getMessage(), t);
 	}
 
-	public void getConnection() throws DatabaseHelperException {
-		if (dbConn != null) {
+	public void getConnection() throws DbException {
+		if (dbConn == null) {
 			dbConn = DatabaseHelper.getConnection();
 		}
 	}
@@ -44,6 +45,7 @@ public class API {
 		}
 		try {
 			if (dbConn != null && !dbConn.isClosed()) {
+				dbConn.commit();
 				dbConn.close();
 			}
 			Global.getLogger.info(this.getClass().getName(), procName, "end of process");
