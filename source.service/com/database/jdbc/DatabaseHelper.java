@@ -202,12 +202,20 @@ public class DatabaseHelper extends HttpServlet {
 		return (T) dbValue;
 	}
 	
+	public static void commit(Connection dbConn) {
+		commit(dbConn, true);
+	}
+	
 	public static void commit(Connection dbConn, boolean commit) {
 		try {
 			if (commit && dbConn!= null) {
 				dbConn.commit();
+				dbConn.close();
+				Global.getLogger.debug("Database connection commit");
 			}else if(dbConn!= null){
 				dbConn.rollback();
+				dbConn.close();
+				Global.getLogger.debug("Database connection rollback");
 			}
 		}catch(SQLException e) {
 			throw new DbException(e);

@@ -25,7 +25,6 @@ public class Container extends HttpServlet {
 
 	public void init() {
 		systemInfomationLog();
-		Global.getLogger.info("System initialization begins");
 		ServerConfigation.IPprocess();//build API swagger
 		Connection dbConn = null;
 		boolean isProcessSuccess = false;;
@@ -37,15 +36,7 @@ public class Container extends HttpServlet {
 		} catch (Exception e) {
 			Global.getLogger.error(getClass().getName(), e.getMessage(), e);
 		} finally {
-			try {
-				if (isProcessSuccess && dbConn!= null) {
-					dbConn.commit();
-				}else if(dbConn!= null){
-					dbConn.rollback();
-				}
-			}catch(SQLException e) {
-				Global.getLogger.error(this.getClass().getName(), e.getMessage(), e);
-			}
+			DatabaseHelper.commit(dbConn, isProcessSuccess);
 			Global.getLogger.info("System initialization completed");
 		}
 	}
@@ -55,6 +46,7 @@ public class Container extends HttpServlet {
 	}
 	
 	public void systemInfomationLog() {
+		Global.getLogger.info("System initialization begins");
 		String catalina = System.getProperty("catalina.base");
 		Global.getLogger.info("System base directory : " + catalina);
 	}

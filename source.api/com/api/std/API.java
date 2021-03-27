@@ -43,16 +43,8 @@ public class API {
 		}else {
 			resp.setStatus(isSuccess);
 		}
-		try {
-			if (dbConn != null && !dbConn.isClosed()) {
-				dbConn.commit();
-				dbConn.close();
-			}
-			Global.getLogger.info(this.getClass().getName(), procName, "end of process");
-		} catch (SQLException e) {
-			resp.setErrMessage(e.getMessage());
-			Global.getLogger.error(procName, e.getMessage(), e);
-		}
+		DatabaseHelper.commit(dbConn);
+		Global.getLogger.info(this.getClass().getName(), procName, "processing complete");
 	}
 
 }

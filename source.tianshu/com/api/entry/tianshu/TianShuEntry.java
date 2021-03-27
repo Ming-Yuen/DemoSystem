@@ -1,7 +1,5 @@
 package com.api.entry.tianshu;
 
-import java.util.Date;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -17,7 +15,6 @@ import com.api.std.Response;
 import com.api.tianshu.TianShuApiPath;
 import com.api.tianshu.util.MissionUtil;
 import com.api.tianshu.util.UserUtil;
-import com.database.jdbc.DatabaseHelper;
 import com.media.utils.MediaUtil;
 import com.tianshu.database.DailyMissionRequest;
 
