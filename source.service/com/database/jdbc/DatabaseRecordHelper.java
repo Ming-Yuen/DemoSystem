@@ -1,4 +1,4 @@
-package com.database;
+package com.database.jdbc;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -16,9 +16,9 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.database.annotation.DatabaseColumn;
-import com.database.annotation.DatabasePrimaryKey;
-import com.database.annotation.DatabaseTable;
+import com.database.jdbc.annotation.DatabaseColumn;
+import com.database.jdbc.annotation.DatabasePrimaryKey;
+import com.database.jdbc.annotation.DatabaseTable;
 
 public class DatabaseRecordHelper {
 	
@@ -26,13 +26,13 @@ public class DatabaseRecordHelper {
 		insert, update, updateThenInsert 
 	}
 	
-	private static void checkRecordAnnotation(Class<?> clazz) throws Exception {
+	private static void checkRecordAnnotation(Class<?> clazz) {
 		DatabaseTable type = clazz.getAnnotation(DatabaseTable.class);
 		if(type == null) {
-			throw new Exception(clazz.getName() + " not found " + DatabaseTable.class.getSimpleName() + " annotation");
+			throw new DbException(clazz.getName() + " not found " + DatabaseTable.class.getSimpleName() + " annotation");
 		}
 		if(type.tableName().isEmpty()) {
-			throw new Exception(clazz.getName() + " " + DatabaseTable.class.getSimpleName() + " tableName cannot empty");
+			throw new DbException(clazz.getName() + " " + DatabaseTable.class.getSimpleName() + " tableName cannot empty");
 		}
 		
 		//record class no primary key or column name will error 
@@ -43,10 +43,10 @@ public class DatabaseRecordHelper {
 			DatabaseColumn column_name = field.getAnnotation(DatabaseColumn.class);
 			if(column_name != null) {
 				if(column_name.columnName().isEmpty()) {
-					throw new Exception(clazz.getName() + field.getName() + " annotation column name cannot empty" );
+					throw new DbException(clazz.getName() + field.getName() + " annotation column name cannot empty" );
 				}
 				if(column_name_list.contains(column_name.columnName().toUpperCase())) {
-					throw new Exception(clazz.getName() + " dulipcate sql column name : " + column_name.columnName() );
+					throw new DbException(clazz.getName() + " dulipcate sql column name : " + column_name.columnName() );
 				}
 				column_name_list.add(column_name.columnName().toUpperCase());
 			}
@@ -55,27 +55,27 @@ public class DatabaseRecordHelper {
 			DatabasePrimaryKey column_primary = field.getAnnotation(DatabasePrimaryKey.class);
 			if(column_primary != null){
 				if(column_name == null) {
-					throw new Exception(clazz.getName() + field.getName() + " annotation column name cannot not exists " + DatabaseColumn.class.getSimpleName());
+					throw new DbException(clazz.getName() + field.getName() + " annotation column name cannot not exists " + DatabaseColumn.class.getSimpleName());
 				}
 				if(column_name.columnName().isEmpty()) {
-					throw new Exception(clazz.getName() + field.getName() + " annotation column name cannot empty" );
+					throw new DbException(clazz.getName() + field.getName() + " annotation column name cannot empty" );
 				}
 				primary_key_exists = true;
 			}
 		}
 		if(!primary_key_exists) {
-			throw new Exception(clazz.getName() + " not found primary key annotation, annotation : " + DatabasePrimaryKey.class.getName());
+			throw new DbException(clazz.getName() + " not found primary key annotation, annotation : " + DatabasePrimaryKey.class.getName());
 		}
 		if(column_name_list.isEmpty()) {
-			throw new Exception(clazz.getName() + " not found column annotation, annotation : " + DatabaseColumn.class.getSimpleName());
+			throw new DbException(clazz.getName() + " not found column annotation, annotation : " + DatabaseColumn.class.getSimpleName());
 		}
 	}
 
-	public static synchronized <T> ArrayList<T> queryRecord(Connection dbConn, Class<T> record) throws Exception {
+	public static synchronized <T> ArrayList<T> queryRecord(Connection dbConn, Class<T> record) {
 		return queryRecord(dbConn, record, null, null);
 	}
 	
-	public static synchronized <T> ArrayList<T> queryRecord(Connection dbConn, Class<T> clazz, String whereClause, Object[] values) throws Exception {
+	public static synchronized <T> ArrayList<T> queryRecord(Connection dbConn, Class<T> clazz, String whereClause, Object[] values) {
 		ArrayList<T> sqlRecordList = new ArrayList<T>();
 		checkRecordAnnotation(clazz);
 		
@@ -84,42 +84,46 @@ public class DatabaseRecordHelper {
 		
 		ArrayList<ArrayList<Object>> sqlResult = DatabaseHelper.query(dbConn, sql.toString().toUpperCase(), values);
 		
-		for (int sqlRow = 0; sqlRow < sqlResult.size(); sqlRow++) {
-			T sqlRecord = clazz.newInstance();
-			for (int sqlColumn = 0; sqlColumn < sqlFieldList.size(); sqlColumn++) {
-				Field column = sqlRecord.getClass().getField(sqlFieldList.get(sqlColumn));
-				if(column.getType() == String.class && sqlResult.get(sqlRow).get(sqlColumn) != null) {
-					column.set(sqlRecord, String.valueOf(sqlResult.get(sqlRow).get(sqlColumn)));
-				}else {
-					column.set(sqlRecord, sqlResult.get(sqlRow).get(sqlColumn));
+		try {
+			for (int sqlRow = 0; sqlRow < sqlResult.size(); sqlRow++) {
+				T sqlRecord = clazz.newInstance();
+				for (int sqlColumn = 0; sqlColumn < sqlFieldList.size(); sqlColumn++) {
+					Field column = sqlRecord.getClass().getField(sqlFieldList.get(sqlColumn));
+					if(column.getType() == String.class && sqlResult.get(sqlRow).get(sqlColumn) != null) {
+						column.set(sqlRecord, String.valueOf(sqlResult.get(sqlRow).get(sqlColumn)));
+					}else {
+						column.set(sqlRecord, sqlResult.get(sqlRow).get(sqlColumn));
+					}
 				}
+				sqlRecordList.add(sqlRecord);
 			}
-			sqlRecordList.add(sqlRecord);
+		}catch( InstantiationException | SecurityException |IllegalAccessException | NoSuchFieldException e) {
+			throw new DbException(e);
 		}
 		return sqlRecordList;
 	}
 	
-	public static <T> Integer insert(Connection dbConn, T record) throws Exception {
+	public static <T> Integer insert(Connection dbConn, T record) {
 		return execute(dbConn, Arrays.asList(record), Execute.insert);
 	}
 
-	public static <T> Integer insert(Connection dbConn, List<T> record) throws Exception {
+	public static <T> Integer insert(Connection dbConn, List<T> record) {
 		return execute(dbConn, record, Execute.insert);
 	}
 	
-	public static <T> Integer update(Connection dbConn, T record) throws Exception {
+	public static <T> Integer update(Connection dbConn, T record) {
 		return execute(dbConn, Arrays.asList(record), Execute.update);
 	}
 
-	public static <T> Integer update(Connection dbConn, List<T> record) throws Exception {
+	public static <T> Integer update(Connection dbConn, List<T> record) {
 		return execute(dbConn, record, Execute.update);
 	}
 
-	public static <T> Integer execute(Connection dbConn, T record, Execute execute) throws Exception {
+	public static <T> Integer execute(Connection dbConn, T record, Execute execute) {
 		return execute(dbConn, Arrays.asList(record), execute);
 	}
 
-	public static <T> Integer execute(Connection dbConn, List<T> record, Execute execute) throws Exception {
+	public static <T> Integer execute(Connection dbConn, List<T> record, Execute execute) {
 		PreparedStatement stmt = null;
 		Date queryStartTime = new Date();
 		try {
@@ -135,20 +139,26 @@ public class DatabaseRecordHelper {
 				DatabaseHelper.databaseSetValue(stmt, columnValues.toArray());
 			}
 			if(stmt == null) {
-				throw new Exception("PreparedStatement is null");
+				throw new DbException("PreparedStatement is null");
 			}
 			int[] updateRows = stmt.executeBatch();
 			int ttlUpdateRows = Arrays.stream(updateRows).sum();
 			DatabaseHelper.sqlStatementLog(stmt, ttlUpdateRows, new Date().getTime() - queryStartTime.getTime());
 			return Integer.valueOf(ttlUpdateRows);
 		} catch (SQLException e) {
-			throw new Exception(e.getMessage(), e);
+			throw new DbException(e);
 		}finally {
-			if(stmt != null) {stmt.close();}
+			try {
+				if(stmt != null) {
+					stmt.close();
+				}
+			}catch(SQLException e){
+				throw new DbException(e);
+			}
 		}
 	}
 
-	public static <T extends DatabaseRecordClass> DatabaseSchema getTableSchema(Connection dbConn, Class<T> record) throws Exception {
+	public static <T extends DatabaseRecordClass> DatabaseSchema getTableSchema(Connection dbConn, Class<T> record) {
 		DatabaseSchema sc = new DatabaseSchema();
 		try {
 			StringBuffer sql = SqlRecord.getSqlQueryStatment(record, null);
@@ -160,8 +170,8 @@ public class DatabaseRecordHelper {
 				String columnType = rsmd.getColumnTypeName(index);
 				sc.dataType.put(columnName, columnType);
 			}
-		} catch (Exception e) {
-			throw new Exception(e.getMessage(), e);
+		} catch (SQLException e) {
+			throw new DbException(e);
 		}
 		return sc;
 	}
@@ -234,17 +244,21 @@ public class DatabaseRecordHelper {
 			return sqlStatement;
 		}
 		
-		public static ArrayList<Object> getSqlFieldValues(Object record, ArrayList<String> sqlFields, ArrayList<String> sqlPrimaryFields, Execute execute) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
+		public static ArrayList<Object> getSqlFieldValues(Object record, ArrayList<String> sqlFields, ArrayList<String> sqlPrimaryFields, Execute execute) {
 			ArrayList<Object> values = new ArrayList<Object>();
 			
 			HashMap<String, Object> annotationCache = new HashMap<String, Object>();
 			
 			Field[] varField = record.getClass().getFields();
-			for(Field var : varField) {
-				DatabaseColumn type = var.getAnnotation(DatabaseColumn.class);
-				if(type != null) {
-					annotationCache.put(type.columnName(), var.get(record));
+			try {
+				for(Field var : varField) {
+					DatabaseColumn type = var.getAnnotation(DatabaseColumn.class);
+					if(type != null) {
+						annotationCache.put(type.columnName(), var.get(record));
+					}
 				}
+			}catch(IllegalAccessException e){
+				throw new DbException(e);
 			}
 			
 			for(String sqlField : sqlFields) {

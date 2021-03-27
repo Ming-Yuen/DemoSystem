@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.api.entry.model.CreateMissionRequest;
 import com.api.entry.model.CreateUserRequest;
-import com.database.DatabaseRecordHelper;
+import com.database.jdbc.DatabaseRecordHelper;
 import com.tianshu.database.UserInfoRecord;
 
 public class UserUtil {

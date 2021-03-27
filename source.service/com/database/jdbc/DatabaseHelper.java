@@ -1,4 +1,4 @@
-package com.database;
+package com.database.jdbc;
 
 import com.configuration.Config;
 import com.global.Global;
@@ -27,7 +27,7 @@ public class DatabaseHelper extends HttpServlet {
 
 	private static final Integer sqlMaxUpdateSize = Integer.valueOf(1000);
 
-	public static Connection getConnection() throws DbException {
+	public static Connection getConnection() {
 		Connection conn = null;
 		String dbDriver = Config.getConfigValue("DatabaseClassName");
 		String dbConnUrl = Config.getConfigValue("DatabaseConnectionUrl");
@@ -54,27 +54,27 @@ public class DatabaseHelper extends HttpServlet {
 		return null;
 	}
 
-	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement) throws DbException {
+	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement) {
 		return query(dbConn, sqlStatement, null, false);
 	}
 
-	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, List<Object> whereCluase) throws DbException {
+	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, List<Object> whereCluase) {
 		return query(dbConn, sqlStatement, whereCluase.toArray(), false);
 	}
 	
-	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, Object[] whereCluase) throws DbException {
+	public static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, Object[] whereCluase) {
 		return query(dbConn, sqlStatement, whereCluase, false);
 	}
 	
-	public static ArrayList<ArrayList<Object>> queryIncludeColumnName(Connection dbConn, String sqlStatement) throws DbException {
+	public static ArrayList<ArrayList<Object>> queryIncludeColumnName(Connection dbConn, String sqlStatement) {
 		return query(dbConn, sqlStatement, null, true);
 	}
 	
-	public static ArrayList<ArrayList<Object>> queryIncludeColumnName(Connection dbConn, String sqlStatement, Object[] whereCluase) throws DbException {
+	public static ArrayList<ArrayList<Object>> queryIncludeColumnName(Connection dbConn, String sqlStatement, Object[] whereCluase) {
 		return query(dbConn, sqlStatement, whereCluase, true);
 	}
 
-	private static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, Object[] whereCluase, boolean includeColName) throws DbException {
+	private static ArrayList<ArrayList<Object>> query(Connection dbConn, String sqlStatement, Object[] whereCluase, boolean includeColName) {
 		synchronized (DatabaseHelper.class) {
 			ArrayList<ArrayList<Object>> resultSetList = new ArrayList<>();
 			PreparedStatement stmt = null;
@@ -135,7 +135,7 @@ public class DatabaseHelper extends HttpServlet {
 		}
 	}
 
-	public static int update(Connection dbConn, String sqlStatement, Object[] whereCluaseArr) throws DbException {
+	public static int update(Connection dbConn, String sqlStatement, Object[] whereCluaseArr) {
 		PreparedStatement stmt = null;
 		Date queryStartTime = new Date();
 		try {
@@ -146,7 +146,7 @@ public class DatabaseHelper extends HttpServlet {
 			int row = stmt.executeUpdate();
 			sqlStatementLog(stmt, row, (new Date()).getTime() - queryStartTime.getTime());
 			return row;
-		} catch (Exception e) {
+		} catch (SQLException e) {
 			throw new DbException(e.getMessage(), e);
 		} finally {
 			try {
@@ -158,7 +158,7 @@ public class DatabaseHelper extends HttpServlet {
 		}
 	}
 
-	public static int update(Connection dbConn, String[] sqlStatementArr, Object[][] whereCluaseArr) throws DbException {
+	public static int update(Connection dbConn, String[] sqlStatementArr, Object[][] whereCluaseArr) {
 		PreparedStatement stmt = null;
 		int ttlUpdateRows = 0;
 		Date queryStartTime = new Date();
@@ -201,6 +201,18 @@ public class DatabaseHelper extends HttpServlet {
 		}
 		return (T) dbValue;
 	}
+	
+	public static void commit(Connection dbConn, boolean commit) {
+		try {
+			if (commit && dbConn!= null) {
+				dbConn.commit();
+			}else if(dbConn!= null){
+				dbConn.rollback();
+			}
+		}catch(SQLException e) {
+			throw new DbException(e);
+		}
+	}
 
 	public static void sqlStatementLog(Statement jdbcSQLStatment, int updateRows, long processTime) {
 		String sqlStatement = jdbcSQLStatment.toString();
@@ -212,6 +224,6 @@ public class DatabaseHelper extends HttpServlet {
 //		}
 //		sqlLog.append(" [" + updateRows + " rows, " + processTime + "ms]");
 		String sqlLog = StringUtils.abbreviate(sqlStatement.substring(sqlStatement.indexOf(":") + 1), sqlMaxLogResultSize) + " [" + updateRows + " rows, " + processTime + "ms]";
-		Global.getLogger.debug(DatabaseHelper.class.getName(), sqlLog.toString());
+		Global.getLogger.debug("SQL :", sqlLog.toString());
 	}
 }

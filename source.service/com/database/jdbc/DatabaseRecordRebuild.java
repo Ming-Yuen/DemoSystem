@@ -1,4 +1,4 @@
-package com.database;
+package com.database.jdbc;
 
 import com.global.Global;
 import java.io.BufferedReader;

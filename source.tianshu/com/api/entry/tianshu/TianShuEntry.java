@@ -17,7 +17,7 @@ import com.api.std.Response;
 import com.api.tianshu.TianShuApiPath;
 import com.api.tianshu.util.MissionUtil;
 import com.api.tianshu.util.UserUtil;
-import com.database.DatabaseHelper;
+import com.database.jdbc.DatabaseHelper;
 import com.media.utils.MediaUtil;
 import com.tianshu.database.DailyMissionRequest;
 

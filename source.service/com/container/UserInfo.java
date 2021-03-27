@@ -1,10 +1,8 @@
 package com.container;
 
-import java.sql.Timestamp;
-
-import com.database.annotation.DatabaseColumn;
-import com.database.annotation.DatabasePrimaryKey;
-import com.database.annotation.DatabaseTable;
+import com.database.jdbc.annotation.DatabaseColumn;
+import com.database.jdbc.annotation.DatabasePrimaryKey;
+import com.database.jdbc.annotation.DatabaseTable;
 
 @DatabaseTable(tableName = "UserInfo")
 public class UserInfo {

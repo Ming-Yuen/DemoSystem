@@ -5,9 +5,10 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/source.api"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/source.service"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/source.service.test"/>
-        <wb-resource deploy-path="/WEB-INF/classes" source-path="/source.Database.Hibernate"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/source.tianshu"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/resources"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/source.Database.Hibernate"/>
         <property name="java-output-path" value="/DemoSystemWeb/build/classes"/>
         <property name="context-root" value="DemoSystem"/>
     </wb-module>

@@ -7,8 +7,6 @@ import java.util.Objects;
 import com.global.Global;
 import com.global.GlobalException;
 
-import antlr.collections.List;
-
 public class ClassUtil {
 
 	public static <T> void referenceFields(T copyRecord, T pasteRecord) throws Exception {

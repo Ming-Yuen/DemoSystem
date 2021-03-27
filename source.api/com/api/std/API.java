@@ -3,8 +3,8 @@ package com.api.std;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import com.database.DatabaseHelper;
-import com.database.DbException;
+import com.database.jdbc.DatabaseHelper;
+import com.database.jdbc.DbException;
 import com.global.Global;
 
 public class API {

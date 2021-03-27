@@ -1,6 +1,6 @@
-package com.database;
+package com.database.jdbc;
 
-public class DbException extends Exception {
+public class DbException extends RuntimeException {
   private static final long serialVersionUID = 1L;
   
   public DbException() {}

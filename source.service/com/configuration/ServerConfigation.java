@@ -57,8 +57,9 @@ public class ServerConfigation extends HttpServlet {
 					}
 				}
 			}
+			Global.getLogger.info("Swagger initialization completed");
 		}catch(Exception e) {
-			Global.getLogger.error(ServerConfigation.class.getName(), "", e);
+			Global.getLogger.error("Swagger initialization error", e);
 		}
 	}
 

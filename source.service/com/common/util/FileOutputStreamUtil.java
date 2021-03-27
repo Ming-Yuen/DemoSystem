@@ -16,14 +16,12 @@ import org.json.JSONObject;
 
 import com.common.tools.Gson;
 import com.common.tools.JSON;
-import com.global.Global;
 import com.global.GlobalException;
-import com.global.Logger;
 
-public class FileOutputStreamUtil extends FileUtil{
+public class FileOutputStreamUtil{
 
 	private enum OutputFormat{
-		Json(null), Tab("\t"), Csv(","), Excel(null);
+		Json(null), Tab("\t"), Csv(","), Xlsx(null), Xls(null);
 		
 		private String format;
 		OutputFormat(String format){
@@ -38,22 +36,16 @@ public class FileOutputStreamUtil extends FileUtil{
 	
 	private final	Charset	charset;
 	private final	boolean	append;
-	private			Logger 	logger;
 	
 	public FileOutputStreamUtil() {
-		this(null, Charset.forName("UTF-8"), true);
+		this(Charset.forName("UTF-8"), true);
 	}
 	
 	public FileOutputStreamUtil(boolean append) {
-		this(null, Charset.forName("UTF-8"), append);
+		this(Charset.forName("UTF-8"), append);
 	}
 	
 	public FileOutputStreamUtil(Charset charset, boolean append) {
-		this(null, charset, append);
-	}
-	
-	public FileOutputStreamUtil(Logger logger, Charset charset, boolean append) {
-		this.logger		= logger;
 		this.charset 	= charset;
 		this.append		= append;
 	}
@@ -79,27 +71,19 @@ public class FileOutputStreamUtil extends FileUtil{
 		
 		File outputFile = new File(filePath);
 		createParentFileIfAbsent(outputFile);
-
-		try(FileOutputStream stream = new FileOutputStream(outputFile, append)){
-			FileLock lock = stream.getChannel().tryLock();
-			try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream))){
-				String data = null;
-				if(record instanceof CharSequence) {
-					if(JSON.isJSONValid(record.toString())) {
-						data = record.toString();
-					}else {
-						throw new IllegalArgumentException("Record invalid JSON type " + record);
-					}
-				}else {
-					data = Gson.toJson(record);
-				}
-				String output = formmat ? JSON.formatJSONStr(data) : data;
-				writer.write(output);
-				writer.newLine();
-				lock.release();
+		
+		String data = null;
+		if(record instanceof CharSequence) {
+			if(JSON.isJSONValid(record.toString())) {
+				data = record.toString();
+			}else {
+				throw new IllegalArgumentException("Record invalid JSON type " + record);
 			}
+		}else {
+			data = Gson.toJson(record);
 		}
-		this.writeLogger().info(this.getClass().getName(), "Print file path : " + filePath);
+		String output = formmat ? JSON.formatJSONStr(data) : data;
+		print(filePath, output);
 	}
 	
 	private void printTextFile(OutputFormat fileFormat, String filePath, Object record) throws IOException, GlobalException {
@@ -109,26 +93,34 @@ public class FileOutputStreamUtil extends FileUtil{
 		File outputFile = new File(filePath);
 		createParentFileIfAbsent(outputFile);
 
-		try(FileOutputStream stream = new FileOutputStream(outputFile, append)){
+		ArrayList<ArrayList<String>> data = ClassUtil.convToStringValues(record);
+		
+		StringBuilder output = new StringBuilder();
+		for(int index = 0; index < data.size(); index++) {
+			output.append(String.join(fileFormat.format, data.get(index)))
+				  .append(System.lineSeparator());
+		}
+		print(filePath, output);
+	}
+	
+	private void print(String filePath, CharSequence output) throws IOException {
+		valusIfFalseThrowException(Charset.isSupported(charset.name()), "Unsupport charset " + charset.name());
+		
+		try(FileOutputStream stream = new FileOutputStream(filePath, append)){
 			FileLock lock = stream.getChannel().tryLock();
-			
-			try(BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream, charset))){
-				ArrayList<ArrayList<String>> data = ClassUtil.convToStringValues(record);
-				
-				for(int index = 0; index < data.size(); index++) {
-					writer.write(String.join(fileFormat.format, data.get(index)));
-					writer.newLine();
-				}
+			try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream, charset))){
+				writer.write(output.toString());
+				writer.newLine();
 				lock.release();
 			}
 		}
-		this.writeLogger().info(this.getClass().getName(), "Print file path : " + filePath);
 	}
 	
 	public static String tabConvJson(ArrayList<ArrayList<Object>> record) {
 		if(record.isEmpty()) {
 			throw new IllegalArgumentException("Record cannot null or empty");
 		}
+		//First row JSON key
 		List<Object> keys = record.get(0);
 
 		JSONArray jsonArr = new JSONArray();
@@ -146,7 +138,13 @@ public class FileOutputStreamUtil extends FileUtil{
 		return jsonArr.toString();
 	}
 	
-	public static void createParentFileIfAbsent(File outputFile) throws IOException {
+	private void valusIfFalseThrowException(boolean obj, String error) {
+		if(!obj) {
+			throw new IllegalArgumentException(error);
+		}
+	}
+	
+	private void createParentFileIfAbsent(File outputFile) throws IOException {
 		if(!outputFile.exists()) {
 			File directory = outputFile.getParentFile();
 			if(!directory.exists()) {
@@ -158,12 +156,5 @@ public class FileOutputStreamUtil extends FileUtil{
 				throw new IOException("System cannot create output file in " + outputFile.getCanonicalPath());
 			}
 		}
-	}
-	
-	private Logger writeLogger() {
-		if(logger == null) {
-			return Global.getLogger;
-		}
-		return logger;
 	}
 }

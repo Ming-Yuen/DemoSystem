@@ -1,10 +1,10 @@
 package com.database.test;
 
-import com.database.annotation.DatabaseColumn;
-import com.database.annotation.DatabasePrimaryKey;
-import com.database.annotation.DatabaseTable;
-
 import java.math.BigDecimal;
+
+import com.database.jdbc.annotation.DatabaseColumn;
+import com.database.jdbc.annotation.DatabasePrimaryKey;
+import com.database.jdbc.annotation.DatabaseTable;
 
 @DatabaseTable(tableName = "Products")
 public class Products {//implements DatabaseRecordClass 

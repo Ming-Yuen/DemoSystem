@@ -1,4 +1,4 @@
-package com.database.annotation;
+package com.database.jdbc.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

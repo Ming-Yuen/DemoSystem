@@ -2,9 +2,9 @@ package com.tianshu.database;
 
 import java.util.Date;
 
-import com.database.annotation.DatabaseColumn;
-import com.database.annotation.DatabasePrimaryKey;
-import com.database.annotation.DatabaseTable;
+import com.database.jdbc.annotation.DatabaseColumn;
+import com.database.jdbc.annotation.DatabasePrimaryKey;
+import com.database.jdbc.annotation.DatabaseTable;
 
 @DatabaseTable(tableName = "UserInfo")
 public class UserInfoRecord {

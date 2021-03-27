@@ -2,7 +2,6 @@ package com.api.tianshu.util;
 
 import java.sql.Connection;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -11,8 +10,9 @@ import org.apache.commons.lang3.time.DateUtils;
 
 import com.api.entry.model.CreateMissionRequest;
 import com.api.entry.model.DailyMissionResponse;
-import com.database.DatabaseHelper;
-import com.database.DbException;
+import com.database.jdbc.DatabaseHelper;
+import com.database.jdbc.DatabaseRecordHelper;
+import com.database.jdbc.DbException;
 import com.tianshu.database.DailyMissionRequest;
 import com.tianshu.database.UserMission;
 
@@ -54,19 +54,19 @@ public class MissionUtil {
 		mission.StartMissionDate 	= DateUtils.parseDate(request.startDate, "yyyy-MM-dd");
 		
 		Date endDate = mission.StartMissionDate;
-		if(request.months != null && request.months > 0) {
+		if(request.wangzhe != null && request.wangzhe == missionType) {
+			endDate = DateUtils.addWeeks(endDate, 4 * request.months);
+		}else if(request.months != null && request.months > 0) {
 			endDate = DateUtils.addMonths(endDate, request.months);
 		}
+		
 		if(request.days != null && request.days > 0) {
 			endDate = DateUtils.addDays(endDate, request.days);
 		}
+		
 		mission.EndMissionDate 		= DateUtils.addSeconds(endDate, -1);//43199 = 60x60x12 seconds
 		mission.Remark 				= StringUtils.isBlank(request.missionremark) ? null : request.missionremark.trim();;
-//		DatabaseRecordHelper.insert(dbConn, mission);
-		String sql = "insert into UserMission (userId, missionType, ReferrerUserId, StartMissionDate, EndMissionDate, Remark) values (" + StringUtils.repeat("'%s'", ",", 6) + ")";
-		SimpleDateFormat  parse = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss");
-		sql = sql.format(sql, mission.userId, mission.missionType, mission.ReferrerUserId, parse.format(mission.StartMissionDate), parse.format(mission.EndMissionDate), mission.Remark);
-		DatabaseHelper.update(dbConn, sql, null);
+		DatabaseRecordHelper.insert(dbConn, mission);
 	}
 	public DailyMissionResponse dailyMission(Connection dbConn, DailyMissionRequest request) throws DbException, ParseException {
 		String sql = new StringBuilder("select info.UserId, info.Pwd, mission.MissionType from UserInfo info, UserMission mission ")
